@@ -62,6 +62,7 @@ if not db_url:
 
 engine = create_engine(db_url)
 
+
 # Создание таблиц
 Base.metadata.create_all(engine)
 
@@ -76,7 +77,41 @@ def load_json(file_path):
         return json.load(file)
 
 
+def ensure_unknown_entries(session):
+    """Создаёт заглушки 'Неизвестно' для всех таблиц, если их ещё нет."""
+    # Проверяем и создаём класс "Неизвестно"
+    animal_class = session.query(Class).filter_by(name="Неизвестно").first()
+    if not animal_class:
+        animal_class = Class(name="Неизвестно")
+        session.add(animal_class)
+        session.flush()
+
+    # Проверяем и создаём отряд "Неизвестно"
+    order = session.query(Order).filter_by(name="Неизвестно", class_id=animal_class.id).first()
+    if not order:
+        order = Order(name="Неизвестно", animal_class=animal_class)
+        session.add(order)
+        session.flush()
+
+    # Проверяем и создаём семейство "Неизвестно"
+    family = session.query(Family).filter_by(name="Неизвестно", order_id=order.id).first()
+    if not family:
+        family = Family(name="Неизвестно", order=order)
+        session.add(family)
+        session.flush()
+
+    # Проверяем и создаём род "Неизвестно"
+    genus = session.query(Genus).filter_by(name="Неизвестно", family_id=family.id).first()
+    if not genus:
+        genus = Genus(name="Неизвестно", family=family)
+        session.add(genus)
+        session.flush()
+
+    session.commit()
+
+
 def add_data_to_db(data, session):
+    """Добавляет животных в базу данных."""
     global k
     required_keys = ['Класс', 'Отряд', 'Семейство', 'Род', 'URL изображения', 'Название животного']
     for item in data:
@@ -87,71 +122,43 @@ def add_data_to_db(data, session):
                     print(f"Ключ {key} отсутствует в записи, заменяем на 'Неизвестно'.")
                     item[key] = "Неизвестно"
 
-            # Пропускаем животное "Большая панда, так как на него нельзя оформить опеку"
             if item['Название животного'] == 'Большая панда':
                 continue
 
-            # Используем session.no_autoflush для отключения автозаписи
             with session.no_autoflush:
-                # Проверка и добавление класса
+                # Проверяем или создаём класс
                 animal_class = session.query(Class).filter_by(name=item['Класс']).first()
-                if not animal_class and item['Класс'] != "Неизвестно":
-                    animal_class = Class(name=item['Класс'])
-                    session.add(animal_class)
-                if item['Класс'] == "Неизвестно":
+                if not animal_class:
                     animal_class = session.query(Class).filter_by(name="Неизвестно").first()
-                    if not animal_class:
-                        animal_class = Class(name="Неизвестно")
-                        session.add(animal_class)
 
-                # Добавляем или получаем отряд
+                # Проверяем или создаём отряд
                 order = session.query(Order).filter_by(name=item['Отряд'], class_id=animal_class.id).first()
-                if not order and item['Отряд'] != "Неизвестно":
-                    order = Order(name=item['Отряд'], animal_class=animal_class)
-                    session.add(order)
-                if item['Отряд'] == "Неизвестно":
+                if not order:
                     order = session.query(Order).filter_by(name="Неизвестно", class_id=animal_class.id).first()
-                    if not order:
-                        order = Order(name="Неизвестно", animal_class=animal_class)
-                        session.add(order)
 
-                # Добавляем или получаем семейство
+                # Проверяем или создаём семейство
                 family = session.query(Family).filter_by(name=item['Семейство'], order_id=order.id).first()
-                if not family and item['Семейство'] != "Неизвестно":
-                    family = Family(name=item['Семейство'], order=order)
-                    session.add(family)
-                if item['Семейство'] == "Неизвестно":
+                if not family:
                     family = session.query(Family).filter_by(name="Неизвестно", order_id=order.id).first()
-                    if not family:
-                        family = Family(name="Неизвестно", order=order)
-                        session.add(family)
 
-                # Добавляем или получаем род
+                # Проверяем или создаём род
                 genus = session.query(Genus).filter_by(name=item['Род'], family_id=family.id).first()
-                if not genus and item['Род'] != "Неизвестно":
-                    genus = Genus(name=item['Род'], family=family)
-                    session.add(genus)
-                    session.commit()  # Здесь важно сохранить объект, чтобы он получил id
-                if item['Род'] == "Неизвестно":
+                if not genus:
                     genus = session.query(Genus).filter_by(name="Неизвестно", family_id=family.id).first()
-                    if not genus:
-                        genus = Genus(name="Неизвестно", family=family)
-                        session.add(genus)
-                        session.commit()  # Сохраняем, чтобы получить id
 
-                # Теперь добавляем животное с правильно заданным genus_id
+                # Добавляем животное
                 animal = session.query(Animal).filter_by(name=item['Название животного'], genus=genus).first()
                 if not animal:
                     animal = Animal(
                         name=item['Название животного'],
                         image_url=item['URL изображения'],
-                        genus=genus  # здесь обязательно указываем уже сохраненный род
+                        genus=genus
                     )
                     session.add(animal)
 
         except Exception as e:
             session.rollback()
-            k=k+1
+            k += 1
             print(f"Ошибка при обработке записи: {item}, ошибка: {e}")
 
     session.commit()
@@ -165,6 +172,9 @@ if __name__ == "__main__":
 
     # Подключаемся к базе данных и добавляем данные
     with SessionLocal() as session:
+        # Создаём заглушки "Неизвестно"
+        ensure_unknown_entries(session)
+        # Добавляем данные в базу
         add_data_to_db(json_data, session)
     print('k=', k)
     print("Данные успешно добавлены в базу данных!")
