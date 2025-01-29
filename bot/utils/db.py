@@ -1,6 +1,5 @@
+# модели и работа с базой
 import os
-import json
-
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Text
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
@@ -61,20 +60,9 @@ if not db_url:
     raise ValueError("Переменная окружения DATABASE_URL не задана")
 
 engine = create_engine(db_url)
-
-
 # Создание таблиц
 Base.metadata.create_all(engine)
-
-
 SessionLocal = sessionmaker(bind=engine)
-
-k = 0
-
-
-def load_json(file_path):
-    with open(file_path, 'r', encoding='utf-8') as file:
-        return json.load(file)
 
 
 def ensure_unknown_entries(session):
@@ -112,7 +100,6 @@ def ensure_unknown_entries(session):
 
 def add_data_to_db(data, session):
     """Добавляет животных в базу данных."""
-    global k
     required_keys = ['Класс', 'Отряд', 'Семейство', 'Род', 'URL изображения', 'Название животного']
     for item in data:
         try:
@@ -158,23 +145,6 @@ def add_data_to_db(data, session):
 
         except Exception as e:
             session.rollback()
-            k += 1
             print(f"Ошибка при обработке записи: {item}, ошибка: {e}")
 
     session.commit()
-
-
-# Основной блок программы
-if __name__ == "__main__":
-    # Загружаем данные из JSON
-    json_file = r"C:\Users\Maria\PycharmProjects\MoscowZooBot\bot\services\animals_classification.json"
-    json_data = load_json(json_file)
-
-    # Подключаемся к базе данных и добавляем данные
-    with SessionLocal() as session:
-        # Создаём заглушки "Неизвестно"
-        ensure_unknown_entries(session)
-        # Добавляем данные в базу
-        add_data_to_db(json_data, session)
-    print('k=', k)
-    print("Данные успешно добавлены в базу данных!")
