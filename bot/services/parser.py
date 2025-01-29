@@ -1,5 +1,4 @@
 # парсинг данных о всех животных с официального сайта  и передача в базу данных
-# import json
 from dotenv import load_dotenv
 import os
 import requests
