@@ -1,4 +1,4 @@
 venv/
 bot/config.py/
 .idea/
-.env/
+.env
