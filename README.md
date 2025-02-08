@@ -59,21 +59,9 @@ BOT_TOKEN=<ваш_бот_токен_от_BotFather>
 DATABASE_URL=postgresql://user:password@localhost:5432/zoopark_bot
 
 # Настройки для парсера
-ZOOPARK_API_URL=<url_api_Московского_зоопарка>
+API_URL=<url_api_Московского_зоопарка>
 
-# Настройки почты (для отправки сообщений сотрудникам зоопарка)
-EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
-EMAIL_HOST=smtp.yandex.ru
-EMAIL_PORT=465
-EMAIL_HOST_USER=<ваш_email>
-EMAIL_HOST_PASSWORD=<ваш_пароль_от_email>
-EMAIL_USE_TLS=False
-EMAIL_USE_SSL=True
-DEFAULT_FROM_EMAIL=<ваш_email>
-SERVER_EMAIL=<ваш_email>
-
-# Настройки для Selenium
-SELENIUM_DRIVER_PATH=<путь_к_драйверу_браузера>
+# Настройки чатов (для отправки сообщений сотрудникам зоопарка)
 ```
 ### **4. Применение миграций для базы данных**
 Для работы с базой данных используйте миграции PostgreSQL:
