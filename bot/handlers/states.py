@@ -6,3 +6,4 @@ class QuizState(StatesGroup):
     choose_order = State()
     choose_family = State()
     choose_genus = State()
+    choose_animal = State()

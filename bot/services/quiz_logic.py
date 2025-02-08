@@ -23,3 +23,13 @@ def get_animals(session, genus_id):
 
 def get_class_by_name(session, name):
     return session.query(Class).filter_by(name=name).first()
+
+
+def get_orders_by_class_name(session, class_name):
+    # Сначала получаем класс по имени
+    animal_class = get_class_by_name(session, class_name)
+    if not animal_class:
+        return []  # Если класс не найден, возвращаем пустой список
+
+    # Теперь используем id класса для получения отрядов
+    return session.query(Order).filter_by(class_id=animal_class.id).all()
