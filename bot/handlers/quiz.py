@@ -10,7 +10,7 @@ from aiogram.types import (
 )
 from bot.services.quiz_logic import get_class_by_name
 from bot.handlers.states import QuizState
-from bot.utils.db import Order, Family, Genus, Animal
+from bot.models.animals import Order, Family, Genus, Animal
 
 
 router = Router()
