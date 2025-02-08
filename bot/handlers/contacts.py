@@ -7,7 +7,7 @@ from bot.utils.config import config
 router = Router()
 
 
-@router.message(Command("contacts"))  # Здесь мы используем Command вместо 'commands'
+@router.message(Command("contacts"))
 async def contact_us(message: Message, state: FSMContext):
     await message.answer("Пожалуйста, введите ваше имя.")
     await state.set_state("waiting_for_name")
