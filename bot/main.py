@@ -1,16 +1,16 @@
-import os
-
-from aiogram import Bot, Dispatcher, Router, F
-from aiogram.types import Message
+import asyncio
+from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.fsm.context import FSMContext
+
 from bot.services.parser import parse_and_collect_data
 from bot.utils.db import SessionLocal, add_data_to_db
-from bot.handlers.start_quiz import start_quiz
-import asyncio
+from bot.handlers.quiz import router as quiz_router
+from bot.handlers.start_quiz import router as start_router
+from bot.handlers.end_quiz import router as end_router
+from bot.utils.config import config
 
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")
+BOT_TOKEN = config.bot_token
 if not BOT_TOKEN:
     raise ValueError("Не задан BOT_TOKEN в переменных окружения!")
 
@@ -18,15 +18,20 @@ bot = Bot(token=BOT_TOKEN)
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
 
-# Роутер для обработки сообщений
-router = Router()
+
+# Middleware для передачи db_session
+async def db_session_middleware(handler, event, data):
+    with SessionLocal() as session:
+        data["db_session"] = session
+        return await handler(event, data)
 
 
-# Обработка команды /start
-@router.message(F.text.casefold() == "/start")
-async def start(message: Message, state: FSMContext):
-    with SessionLocal() as session:  # Создаем сессию базы данных
-        await start_quiz(message, state, session)
+dp.update.middleware(db_session_middleware)
+
+# Подключаем роутеры
+dp.include_router(start_router)  # Роутер из start_quiz.py
+dp.include_router(end_router)  # Роутер из end_quiz.py
+dp.include_router(quiz_router)  # Роутер из quiz.py
 
 
 # Парсинг данных и добавление в базу
@@ -36,15 +41,13 @@ def parse_data():
         print("Ошибка: данные не были получены, процесс остановлен.")
         return
     with SessionLocal() as session:
-        # ensure_unknown_entries(session)
         add_data_to_db(data, session)
     print("Данные успешно добавлены в базу!")
 
 
 # Основная функция запуска
 async def main():
-    dp.include_router(router)  # Подключаем роутер
-    await bot.delete_webhook(drop_pending_updates=True)  # Очищаем старые обновления
+    await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
 
