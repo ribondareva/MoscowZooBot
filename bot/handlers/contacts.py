@@ -32,9 +32,6 @@ async def get_question(message: Message, state: FSMContext, bot: Bot):
         f"От пользователя {user_name} @{message.from_user.username}:\n\n{user_question}"
     )
 
-    # Отправляем сообщение сотруднику
-    # from bot.main import bot
-
     await bot.send_message(config.support_chat_id, contact_message)
 
     # Подтверждаем, что сообщение отправлено
