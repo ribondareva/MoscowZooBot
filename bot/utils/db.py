@@ -15,8 +15,6 @@ if not db_url:
     raise ValueError("Переменная окружения DATABASE_URL не задана")
 
 engine = create_engine(db_url)
-# Создание таблиц
-# Base.metadata.create_all(engine)
 SessionLocal = sessionmaker(bind=engine)
 
 
@@ -156,7 +154,9 @@ def create_user_table():
     print("Таблица пользователей была успешно создана.")
 
 
-async def save_user_to_db(chat_id, username, is_active=True, user_state="unknown"):
+async def save_user_to_db(
+    chat_id, username, is_active=True, user_state="unknown", chosen_animal="not chosen"
+):
     """Сохраняет информацию о пользователе в базу данных."""
 
     session = SessionLocal()
@@ -170,6 +170,7 @@ async def save_user_to_db(chat_id, username, is_active=True, user_state="unknown
             user.username = username
             user.is_active = is_active
             user.state = user_state
+            user.chosen_animal = chosen_animal
             print(f"Пользователь {username} обновлен в базе данных.")
         else:
             # Если пользователь не существует, создаем нового
@@ -178,6 +179,7 @@ async def save_user_to_db(chat_id, username, is_active=True, user_state="unknown
                 username=username,
                 is_active=is_active,
                 state=user_state,
+                chosen_animal=chosen_animal,
             )
             session.add(user)
             print(f"Пользователь {username} успешно сохранен в базу данных.")

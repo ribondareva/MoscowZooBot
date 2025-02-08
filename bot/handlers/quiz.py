@@ -22,7 +22,8 @@ async def process_class_selection(message: Message, state: FSMContext, db_sessio
     username = message.from_user.username or "unknown"
     is_active = True
     state_str = await state.get_state()
-    await save_user_to_db(chat_id, username, is_active, state_str)
+    chosen_animal = "not chosen"
+    await save_user_to_db(chat_id, username, is_active, state_str, chosen_animal)
     class_name = message.text.strip()
     # Получаем класс по имени
     animal_class = get_class_by_name(db_session, class_name)
@@ -58,7 +59,8 @@ async def process_order_selection(message: Message, state: FSMContext, db_sessio
     username = message.from_user.username or "unknown"
     is_active = True
     state_str = await state.get_state()
-    await save_user_to_db(chat_id, username, is_active, state_str)
+    chosen_animal = "not chosen"
+    await save_user_to_db(chat_id, username, is_active, state_str, chosen_animal)
     order_name = message.text.strip()
     # Получаем отряд по имени
     animal_order = db_session.query(Order).filter_by(name=order_name).first()
@@ -90,7 +92,8 @@ async def process_family_selection(message: Message, state: FSMContext, db_sessi
     username = message.from_user.username or "unknown"
     is_active = True
     state_str = await state.get_state()
-    await save_user_to_db(chat_id, username, is_active, state_str)
+    chosen_animal = "not chosen"
+    await save_user_to_db(chat_id, username, is_active, state_str, chosen_animal)
     family_name = message.text.strip()
     # Получаем семейство по имени
     family = db_session.query(Family).filter_by(name=family_name).first()
@@ -122,7 +125,8 @@ async def process_genus_selection(message: Message, state: FSMContext, db_sessio
     username = message.from_user.username or "unknown"
     is_active = True
     state_str = await state.get_state()
-    await save_user_to_db(chat_id, username, is_active, state_str)
+    chosen_animal = "not chosen"
+    await save_user_to_db(chat_id, username, is_active, state_str, chosen_animal)
     genus_name = message.text.strip()
     # Получаем род по имени
     genus = db_session.query(Genus).filter_by(name=genus_name).first()
@@ -164,7 +168,8 @@ async def process_genus_selection(message: Message, state: FSMContext, db_sessio
         username = message.from_user.username or "unknown"
         is_active = True
         state_str = await state.get_state()
-        await save_user_to_db(chat_id, username, is_active, state_str)
+        chosen_animal = "not chosen"
+        await save_user_to_db(chat_id, username, is_active, state_str, chosen_animal)
     else:
         await message.answer("К сожалению, у этого рода нет животных.")
 
@@ -203,7 +208,8 @@ async def process_animal_callback(callback_query, state: FSMContext, db_session)
     username = callback_query.from_user.username or "unknown"
     is_active = False
     state_str = "The animal was chosen"
-    await save_user_to_db(chat_id, username, is_active, state_str)
+    chosen_animal = str(animal.name)
+    await save_user_to_db(chat_id, username, is_active, state_str, chosen_animal)
 
     await callback_query.message.answer(
         "Для того чтобы: \n"

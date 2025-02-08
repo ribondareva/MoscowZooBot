@@ -3,7 +3,10 @@ from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from bot.services.parser import parse_and_collect_data
-from bot.utils.db import SessionLocal, add_data_to_db, save_user_to_db
+from bot.utils.db import (
+    SessionLocal,
+    add_data_to_db,
+)
 from bot.handlers.quiz import router as quiz_router
 from bot.handlers.start_quiz import router as start_router
 from bot.handlers.end_quiz import router as end_router
@@ -23,10 +26,6 @@ dp = Dispatcher(storage=storage)
 async def db_session_middleware(handler, event, data):
     with SessionLocal() as session:
         data["db_session"] = session
-        # if hasattr(event, "from_user") and event.from_user:
-        #     chat_id = event.from_user.id
-        #     username = event.from_user.username or "unknown"
-        #     save_user_to_db(chat_id, username)
         return await handler(event, data)
 
 
