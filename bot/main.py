@@ -1,15 +1,18 @@
+# Точка входа в бота
 import asyncio
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.types import BotCommand
 
 from bot.services.parser import parse_and_collect_data
 from bot.utils.db import (
     SessionLocal,
     add_data_to_db,
 )
-from bot.handlers.quiz import router as quiz_router
 from bot.handlers.start_quiz import router as start_router
 from bot.handlers.end_quiz import router as end_router
+from bot.handlers.quiz import router as quiz_router
+from bot.handlers.contacts import router as contacts_router
 from bot.utils.config import config
 
 
@@ -35,6 +38,7 @@ dp.update.middleware(db_session_middleware)
 dp.include_router(start_router)  # Роутер из start_quiz.py
 dp.include_router(end_router)  # Роутер из end_quiz.py
 dp.include_router(quiz_router)  # Роутер из quiz.py
+dp.include_router(contacts_router)  # Роутер из contacts.py
 
 
 # Парсинг данных и добавление в базу
@@ -50,6 +54,9 @@ def parse_data():
 
 # Основная функция запуска
 async def main():
+    await bot.set_my_commands(
+        [BotCommand(command="contacts", description="Связаться с нами")]
+    )
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 

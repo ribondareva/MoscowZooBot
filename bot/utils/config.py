@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     bot_token: str
     database_url: str
     api_url: str
+    support_chat_id: int
     debug: bool = False  # Значение по умолчанию, если переменной нет в .env
 
 
