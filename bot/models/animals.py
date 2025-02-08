@@ -1,3 +1,4 @@
+# модели животных и их классификации
 from sqlalchemy import (
     Column,
     Integer,
