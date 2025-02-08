@@ -3,6 +3,7 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.fsm.context import FSMContext
 
 from bot.handlers.states import QuizState
+from bot.utils.db import save_user_to_db
 from bot.services.quiz_logic import get_classes
 
 
@@ -13,6 +14,11 @@ router = Router()
 # Обработчик команды /start
 @router.message(F.text.casefold() == "/start")
 async def start_quiz(message: types.Message, state: FSMContext, db_session):
+    chat_id = message.from_user.id
+    username = message.from_user.username or "unknown"
+    is_active = True
+    state_str = "Quiz started"
+    await save_user_to_db(chat_id, username, is_active, state_str)
     classes = get_classes(db_session)
     if not classes:
         await message.answer("К сожалению, пока нет данных о классах животных.")

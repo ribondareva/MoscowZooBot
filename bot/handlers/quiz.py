@@ -11,15 +11,19 @@ from aiogram.types import (
 from bot.services.quiz_logic import get_class_by_name
 from bot.handlers.states import QuizState
 from bot.models.animals import Order, Family, Genus, Animal
-
+from bot.utils.db import save_user_to_db
 
 router = Router()
 
 
 @router.message(QuizState.choose_class)
 async def process_class_selection(message: Message, state: FSMContext, db_session):
+    chat_id = message.from_user.id
+    username = message.from_user.username or "unknown"
+    is_active = True
+    state_str = await state.get_state()
+    await save_user_to_db(chat_id, username, is_active, state_str)
     class_name = message.text.strip()
-
     # Получаем класс по имени
     animal_class = get_class_by_name(db_session, class_name)
 
@@ -50,8 +54,12 @@ async def process_class_selection(message: Message, state: FSMContext, db_sessio
 
 @router.message(QuizState.choose_order)
 async def process_order_selection(message: Message, state: FSMContext, db_session):
+    chat_id = message.from_user.id
+    username = message.from_user.username or "unknown"
+    is_active = True
+    state_str = await state.get_state()
+    await save_user_to_db(chat_id, username, is_active, state_str)
     order_name = message.text.strip()
-
     # Получаем отряд по имени
     animal_order = db_session.query(Order).filter_by(name=order_name).first()
     if not animal_order:
@@ -78,8 +86,12 @@ async def process_order_selection(message: Message, state: FSMContext, db_sessio
 
 @router.message(QuizState.choose_family)
 async def process_family_selection(message: Message, state: FSMContext, db_session):
+    chat_id = message.from_user.id
+    username = message.from_user.username or "unknown"
+    is_active = True
+    state_str = await state.get_state()
+    await save_user_to_db(chat_id, username, is_active, state_str)
     family_name = message.text.strip()
-
     # Получаем семейство по имени
     family = db_session.query(Family).filter_by(name=family_name).first()
     if not family:
@@ -106,8 +118,12 @@ async def process_family_selection(message: Message, state: FSMContext, db_sessi
 
 @router.message(QuizState.choose_genus)
 async def process_genus_selection(message: Message, state: FSMContext, db_session):
+    chat_id = message.from_user.id
+    username = message.from_user.username or "unknown"
+    is_active = True
+    state_str = await state.get_state()
+    await save_user_to_db(chat_id, username, is_active, state_str)
     genus_name = message.text.strip()
-
     # Получаем род по имени
     genus = db_session.query(Genus).filter_by(name=genus_name).first()
     if not genus:
@@ -144,6 +160,11 @@ async def process_genus_selection(message: Message, state: FSMContext, db_sessio
     if inline_keyboard.inline_keyboard:
         await message.answer("Выберите животное:", reply_markup=inline_keyboard)
         await state.set_state(QuizState.choose_animal)
+        chat_id = message.from_user.id
+        username = message.from_user.username or "unknown"
+        is_active = True
+        state_str = await state.get_state()
+        await save_user_to_db(chat_id, username, is_active, state_str)
     else:
         await message.answer("К сожалению, у этого рода нет животных.")
 
@@ -151,7 +172,6 @@ async def process_genus_selection(message: Message, state: FSMContext, db_sessio
 @router.callback_query(F.data.startswith("animal_"))
 async def process_animal_callback(callback_query, state: FSMContext, db_session):
     animal_id = int(callback_query.data.split("_")[1])
-
     # Получаем информацию о животном из базы данных
     animal = db_session.query(Animal).filter_by(id=animal_id).first()
     if not animal:
@@ -177,6 +197,13 @@ async def process_animal_callback(callback_query, state: FSMContext, db_session)
     await callback_query.message.answer_photo(
         photo=animal.image_url, reply_markup=ReplyKeyboardRemove()
     )
+
+    # Обновляем состояние пользователя в базе данных
+    chat_id = callback_query.from_user.id
+    username = callback_query.from_user.username or "unknown"
+    is_active = False
+    state_str = "The animal was chosen"
+    await save_user_to_db(chat_id, username, is_active, state_str)
 
     await callback_query.message.answer(
         "Для того чтобы: \n"
