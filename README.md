@@ -41,7 +41,7 @@
 
 ### **1. Клонирование репозитория**
 ```
-git clone https://github.com/rebondareva/MoscowZooBot.git
+git clone https://github.com/ribondareva/MoscowZooBot.git
 cd MoscowZooBot
 ```
 ### **2. Установка зависимостей**
