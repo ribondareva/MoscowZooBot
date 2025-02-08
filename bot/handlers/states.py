@@ -7,3 +7,7 @@ class QuizState(StatesGroup):
     choose_family = State()
     choose_genus = State()
     choose_animal = State()
+
+
+class FeedbackState(StatesGroup):
+    waiting_for_feedback = State()

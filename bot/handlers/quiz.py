@@ -8,6 +8,7 @@ from aiogram.types import (
     InlineKeyboardMarkup,
     InlineKeyboardButton,
 )
+from sqlalchemy import select
 from bot.services.quiz_logic import get_class_by_name
 from bot.handlers.states import QuizState
 from bot.models.animals import Order, Family, Genus, Animal
@@ -26,7 +27,7 @@ async def process_class_selection(message: Message, state: FSMContext, db_sessio
     await save_user_to_db(chat_id, username, is_active, state_str, chosen_animal)
     class_name = message.text.strip()
     # Получаем класс по имени
-    animal_class = get_class_by_name(db_session, class_name)
+    animal_class = await get_class_by_name(db_session, class_name)
 
     if not animal_class:
         await message.answer("Ошибка: такого класса нет. Выберите из списка.")
@@ -36,7 +37,12 @@ async def process_class_selection(message: Message, state: FSMContext, db_sessio
     class_id = animal_class.id
 
     # Теперь ищем отряды по числовому class_id
-    orders = db_session.query(Order).filter(Order.class_id == class_id).all()
+    # orders = db_session.query(Order).filter(Order.class_id == class_id).all()
+    query = select(Order).where(
+        Order.class_id == class_id
+    )  # .where() применяется к запросу
+    result = await db_session.execute(query)
+    orders = result.scalars().all()
 
     if not orders:
         await message.answer("К сожалению, в этом классе нет отрядов.")
@@ -63,13 +69,19 @@ async def process_order_selection(message: Message, state: FSMContext, db_sessio
     await save_user_to_db(chat_id, username, is_active, state_str, chosen_animal)
     order_name = message.text.strip()
     # Получаем отряд по имени
-    animal_order = db_session.query(Order).filter_by(name=order_name).first()
+    # animal_order = db_session.query(Order).filter_by(name=order_name).first()
+    query = select(Order).where(Order.name == order_name)
+    result = await db_session.execute(query)
+    animal_order = result.scalars().first()
     if not animal_order:
         await message.answer("Ошибка: такого отряда нет. Выберите из списка.")
         return
 
     # Получаем список семейств, принадлежащих выбранному отряду
-    families = db_session.query(Family).filter_by(order_id=animal_order.id).all()
+    # families = db_session.query(Family).filter_by(order_id=animal_order.id).all()
+    query = select(Family).where(Family.order_id == animal_order.id)
+    result = await db_session.execute(query)
+    families = result.scalars().all()
     if not families:
         await message.answer("К сожалению, у этого отряда нет семейств.")
         return
@@ -96,13 +108,19 @@ async def process_family_selection(message: Message, state: FSMContext, db_sessi
     await save_user_to_db(chat_id, username, is_active, state_str, chosen_animal)
     family_name = message.text.strip()
     # Получаем семейство по имени
-    family = db_session.query(Family).filter_by(name=family_name).first()
+    # family = db_session.query(Family).filter_by(name=family_name).first()
+    query = select(Family).where(Family.name == family_name)
+    result = await db_session.execute(query)
+    family = result.scalars().first()
     if not family:
         await message.answer("Ошибка: такого семейства нет. Выберите из списка.")
         return
 
     # Получаем список родов для выбранного семейства
-    genera = db_session.query(Genus).filter_by(family_id=family.id).all()
+    # genera = db_session.query(Genus).filter_by(family_id=family.id).all()
+    query = select(Genus).where(Genus.family_id == family.id)
+    result = await db_session.execute(query)
+    genera = result.scalars().all()
     if not genera:
         await message.answer("К сожалению, у этого семейства нет родов.")
         return
@@ -129,13 +147,19 @@ async def process_genus_selection(message: Message, state: FSMContext, db_sessio
     await save_user_to_db(chat_id, username, is_active, state_str, chosen_animal)
     genus_name = message.text.strip()
     # Получаем род по имени
-    genus = db_session.query(Genus).filter_by(name=genus_name).first()
+    # genus = db_session.query(Genus).filter_by(name=genus_name).first()
+    query = select(Genus).where(Genus.name == genus_name)
+    result = await db_session.execute(query)
+    genus = result.scalars().first()
     if not genus:
         await message.answer("Ошибка: такого рода нет. Выберите из списка.")
         return
 
     # Получаем список животных в выбранном роде
-    animals = db_session.query(Animal).filter_by(genus_id=genus.id).all()
+    # animals = db_session.query(Animal).filter_by(genus_id=genus.id).all()
+    query = select(Animal).where(Animal.genus_id == genus.id)
+    result = await db_session.execute(query)
+    animals = result.scalars().all()
     if not animals:
         await message.answer("К сожалению, у этого рода нет животных.")
         return
@@ -178,7 +202,10 @@ async def process_genus_selection(message: Message, state: FSMContext, db_sessio
 async def process_animal_callback(callback_query, state: FSMContext, db_session):
     animal_id = int(callback_query.data.split("_")[1])
     # Получаем информацию о животном из базы данных
-    animal = db_session.query(Animal).filter_by(id=animal_id).first()
+    # animal = db_session.query(Animal).filter_by(id=animal_id).first()
+    query = select(Animal).where(Animal.id == animal_id)
+    result = await db_session.execute(query)
+    animal = result.scalars().first()
     if not animal:
         await callback_query.message.answer("Ошибка: животное не найдено.")
         return
@@ -215,6 +242,7 @@ async def process_animal_callback(callback_query, state: FSMContext, db_session)
         "Для того чтобы: \n"
         "- связаться с сотрудником зоопарка нажмите /contacts \n"
         "- поделиться результатами в соцсетях нажмите /share \n"
+        "- оставить отзыв нажмите /feedback \n"
         "- попробовать пройти викторину еще раз нажмите /start"
     )
     await state.clear()

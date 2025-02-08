@@ -1,27 +1,81 @@
-# модели и работа с базой
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import text
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy import text, select
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from bot.models.feedback import Feedback
 from bot.utils.config import config
 from bot.models.animals import Class, Order, Family, Genus, Animal, Base
 from bot.models.user import User
 
 
+# Загрузка переменных окружения
 load_dotenv()
+
+# Получаем URL базы данных из конфигурации
 db_url = config.database_url
 if not db_url:
     raise ValueError("Переменная окружения DATABASE_URL не задана")
 
-engine = create_engine(db_url)
-SessionLocal = sessionmaker(bind=engine)
+# Используем асинхронный движок
+engine = create_async_engine(db_url, echo=True)
+
+# Создаем асинхронную фабрику сессий
+async_session_maker = async_sessionmaker(
+    bind=engine, class_=AsyncSession, expire_on_commit=False
+)
 
 
-def create_all_tables():
-    """Создает все таблицы в базе данных."""
-    Base.metadata.create_all(engine)
+async def create_all_tables():
+    """Создает все таблицы в базе данных (асинхронно)."""
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
     print("Все таблицы были успешно созданы.")
+
+
+async def create_user_table():
+    """Создает только таблицу для пользователей (асинхронно)."""
+    async with engine.begin() as conn:
+        await conn.run_sync(User.__table__.create)
+    print("Таблица пользователей была успешно создана.")
+
+
+async def create_feedback_table():
+    """Создает только таблицу для отзывов (асинхронно)."""
+    async with engine.begin() as conn:
+        await conn.run_sync(Feedback.__table__.create)
+    print("Таблица отзывов была успешно создана.")
+
+
+async def save_user_to_db(
+    chat_id, username, is_active=True, user_state="unknown", chosen_animal="not chosen"
+):
+    """Сохраняет информацию о пользователе в базу данных асинхронно."""
+
+    async with async_session_maker() as session:
+        async with session.begin():  # Блокируем транзакцию для выполнения изменений
+            # Проверяем, существует ли пользователь с таким chat_id
+            result = await session.execute(select(User).filter_by(chat_id=chat_id))
+            user = result.scalars().first()
+
+            if user:
+                # Если пользователь существует, обновляем его данные
+                user.username = username
+                user.is_active = is_active
+                user.state = user_state
+                user.chosen_animal = chosen_animal
+                print(f"Пользователь {username} обновлен в базе данных.")
+            else:
+                # Если пользователь не существует, создаем нового
+                user = User(
+                    chat_id=chat_id,
+                    username=username,
+                    is_active=is_active,
+                    state=user_state,
+                    chosen_animal=chosen_animal,
+                )
+                session.add(user)
+                print(f"Пользователь {username} успешно сохранен в базу данных.")
+
+            await session.commit()
 
 
 def get_or_create(session, model, **kwargs):
@@ -56,9 +110,9 @@ def add_family_with_on_conflict(session, name, order_id):
     )
 
 
-def add_data_to_db(data, session):
+async def add_data_to_db(data, session):
     """Добавляет животных в базу данных, исключая тех, у кого отсутствует классификация."""
-    create_all_tables()
+    await create_all_tables()
     required_keys = [
         "Класс",
         "Отряд",
@@ -82,7 +136,7 @@ def add_data_to_db(data, session):
                 continue
 
             # Начинаем транзакцию
-            with session.begin():
+            async with session.begin():
                 # Получаем или создаем класс
                 animal_class, _ = get_or_create(session, Class, name=item["Класс"])
 
@@ -139,54 +193,8 @@ def add_data_to_db(data, session):
                     )
                     session.add(animal)
 
-                # Все операции завершены, транзакция зафиксируется автоматически при выходе из блока `with`
-
         except Exception as e:
             # В случае ошибки транзакция откатывается автоматически
             print(
                 f"Ошибка при обработке записи {item.get('Название животного', 'Без названия')}: {e}"
             )
-
-
-def create_user_table():
-    """Создает только таблицу для пользователей."""
-    User.__table__.create(engine)
-    print("Таблица пользователей была успешно создана.")
-
-
-async def save_user_to_db(
-    chat_id, username, is_active=True, user_state="unknown", chosen_animal="not chosen"
-):
-    """Сохраняет информацию о пользователе в базу данных."""
-
-    session = SessionLocal()
-
-    try:
-        # Проверяем, существует ли пользователь с таким chat_id
-        user = session.query(User).filter_by(chat_id=chat_id).first()
-
-        if user:
-            # Если пользователь существует, обновляем его данные
-            user.username = username
-            user.is_active = is_active
-            user.state = user_state
-            user.chosen_animal = chosen_animal
-            print(f"Пользователь {username} обновлен в базе данных.")
-        else:
-            # Если пользователь не существует, создаем нового
-            user = User(
-                chat_id=chat_id,
-                username=username,
-                is_active=is_active,
-                state=user_state,
-                chosen_animal=chosen_animal,
-            )
-            session.add(user)
-            print(f"Пользователь {username} успешно сохранен в базу данных.")
-
-        session.commit()
-
-    except IntegrityError:
-        # Если возникает ошибка из-за нарушенной уникальности или других проблем
-        session.rollback()
-        print(f"Ошибка при сохранении данных пользователя с chat_id={chat_id}.")

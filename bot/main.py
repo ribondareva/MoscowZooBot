@@ -6,13 +6,15 @@ from aiogram.types import BotCommand
 
 from bot.services.parser import parse_and_collect_data
 from bot.utils.db import (
-    SessionLocal,
+    async_session_maker,
     add_data_to_db,
+    create_feedback_table,
 )
 from bot.handlers.start_quiz import router as start_router
 from bot.handlers.end_quiz import router as end_router
 from bot.handlers.quiz import router as quiz_router
 from bot.handlers.contacts import router as contacts_router
+from bot.handlers.feedback import router as feedback_router
 from bot.utils.config import config
 
 
@@ -27,7 +29,7 @@ dp = Dispatcher(storage=storage)
 
 # Middleware для передачи db_session
 async def db_session_middleware(handler, event, data):
-    with SessionLocal() as session:
+    async with async_session_maker() as session:
         data["db_session"] = session
         return await handler(event, data)
 
@@ -39,16 +41,17 @@ dp.include_router(start_router)  # Роутер из start_quiz.py
 dp.include_router(end_router)  # Роутер из end_quiz.py
 dp.include_router(quiz_router)  # Роутер из quiz.py
 dp.include_router(contacts_router)  # Роутер из contacts.py
+dp.include_router(feedback_router)  # Роутер из feedback.py
 
 
 # Парсинг данных и добавление в базу
-def parse_data():
+async def parse_data():
     data = parse_and_collect_data()
     if not data:
         print("Ошибка: данные не были получены, процесс остановлен.")
         return
-    with SessionLocal() as session:
-        add_data_to_db(data, session)
+    async with async_session_maker() as session:
+        await add_data_to_db(data, session)
     print("Данные успешно добавлены в базу!")
 
 
@@ -64,4 +67,5 @@ async def main():
 if __name__ == "__main__":
     # Раскомментируйте, чтобы запустить парсинг и добавление данных в базу
     # parse_data()
+    # create_feedback_table()
     asyncio.run(main())

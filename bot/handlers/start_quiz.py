@@ -20,7 +20,7 @@ async def start_quiz(message: types.Message, state: FSMContext, db_session):
     state_str = "Quiz started"
     chosen_animal = "not chosen"
     await save_user_to_db(chat_id, username, is_active, state_str, chosen_animal)
-    classes = get_classes(db_session)
+    classes = await get_classes(db_session)
     if not classes:
         await message.answer("К сожалению, пока нет данных о классах животных.")
         return
