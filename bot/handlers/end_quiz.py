@@ -18,6 +18,6 @@ async def cmd_cancel_no_state(message: Message, state: FSMContext):
 async def cmd_cancel(message: Message, state: FSMContext):
     await state.clear()
     await message.answer(
-        text="Действие отменено. Вы можете начать викторину заново! \n Чтобы заново начать нажмите /start",
+        text="Действие отменено. Вы можете начать викторину заново! \n Чтобы заново начать нажмите /quiz",
         reply_markup=ReplyKeyboardRemove(),
     )

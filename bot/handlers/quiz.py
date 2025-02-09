@@ -1,3 +1,4 @@
+# Вопросы викторины
 from aiogram import Router, F
 from aiogram.fsm.context import FSMContext
 from aiogram.types import (
@@ -243,6 +244,6 @@ async def process_animal_callback(callback_query, state: FSMContext, db_session)
         "- связаться с сотрудником зоопарка нажмите /contacts \n"
         "- поделиться результатами в соцсетях нажмите /share \n"
         "- оставить отзыв нажмите /feedback \n"
-        "- попробовать пройти викторину еще раз нажмите /start"
+        "- попробовать пройти викторину еще раз нажмите /quiz"
     )
     await state.clear()

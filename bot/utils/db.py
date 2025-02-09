@@ -110,6 +110,15 @@ def add_family_with_on_conflict(session, name, order_id):
     )
 
 
+async def get_user_result(db_session, chat_id):
+    """Получает результаты викторины для пользователя по его chat_id"""
+    query = select(User).where(User.chat_id == chat_id)
+    result = await db_session.execute(query)
+    user = result.scalars().first()
+
+    return user  # Вернёт объект User или None, если данных нет
+
+
 async def add_data_to_db(data, session):
     """Добавляет животных в базу данных, исключая тех, у кого отсутствует классификация."""
     await create_all_tables()

@@ -8,13 +8,13 @@ from bot.services.parser import parse_and_collect_data
 from bot.utils.db import (
     async_session_maker,
     add_data_to_db,
-    create_feedback_table,
 )
 from bot.handlers.start_quiz import router as start_router
 from bot.handlers.end_quiz import router as end_router
 from bot.handlers.quiz import router as quiz_router
 from bot.handlers.contacts import router as contacts_router
 from bot.handlers.feedback import router as feedback_router
+from bot.handlers.share import router as share_router
 from bot.utils.config import config
 
 
@@ -42,6 +42,7 @@ dp.include_router(end_router)  # Роутер из end_quiz.py
 dp.include_router(quiz_router)  # Роутер из quiz.py
 dp.include_router(contacts_router)  # Роутер из contacts.py
 dp.include_router(feedback_router)  # Роутер из feedback.py
+dp.include_router(share_router)  # Роутер из share.py
 
 
 # Парсинг данных и добавление в базу
@@ -67,5 +68,4 @@ async def main():
 if __name__ == "__main__":
     # Раскомментируйте, чтобы запустить парсинг и добавление данных в базу
     # parse_data()
-    # create_feedback_table()
     asyncio.run(main())
