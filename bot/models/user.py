@@ -1,5 +1,5 @@
 # Модель пользователя
-from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy import Column, Integer, BigInteger, String, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 
 
@@ -11,7 +11,7 @@ class User(Base):
 
     id = Column(Integer, primary_key=True)
     username = Column(String)
-    chat_id = Column(Integer, unique=True)
+    chat_id = Column(BigInteger, unique=True)
     is_active = Column(Boolean, default=False)
     state = Column(String, default="unknown")
     chosen_animal = Column(String, default="not chosen")

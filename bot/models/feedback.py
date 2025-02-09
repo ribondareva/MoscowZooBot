@@ -1,5 +1,5 @@
 # Модель отзывов
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, BigInteger, String, DateTime
 from datetime import datetime
 from bot.models.animals import Base
 
@@ -8,7 +8,7 @@ class Feedback(Base):
     __tablename__ = "feedbacks"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, nullable=False)
+    user_id = Column(BigInteger, nullable=False)
     username = Column(String, nullable=True)
     text = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)

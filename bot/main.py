@@ -8,6 +8,9 @@ from bot.services.parser import parse_and_collect_data
 from bot.utils.db import (
     async_session_maker,
     add_data_to_db,
+    create_feedback_table,
+    create_user_table,
+    create_all_tables,
 )
 from bot.handlers.start_quiz import router as start_router
 from bot.handlers.end_quiz import router as end_router
@@ -61,6 +64,9 @@ async def main():
     await bot.set_my_commands(
         [BotCommand(command="contacts", description="Связаться с нами")]
     )
+    # await create_user_table()
+    # await create_feedback_table()
+    # await create_all_tables()
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
