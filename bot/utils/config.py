@@ -9,10 +9,9 @@ class Settings(BaseSettings):
     support_chat_id: int
     debug: bool = False  # Значение по умолчанию, если переменной нет в .env
 
-
-class Config:
-    env_file = ".env"
-    env_file_encoding = "utf-8"
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
 
 
 config = Settings()
