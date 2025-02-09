@@ -78,9 +78,11 @@ async def save_user_to_db(
             await session.commit()
 
 
-def get_or_create(session, model, **kwargs):
+async def get_or_create(session, model, **kwargs):
     """Получает или создает запись в базе данных, если она не существует."""
-    instance = session.query(model).filter_by(**kwargs).first()
+    query = select(model).filter_by(**kwargs)
+    result = await session.execute(query)
+    instance = result.scalars().first()
     if instance:
         return instance, False  # Если запись существует
     else:
