@@ -1,24 +1,32 @@
-# Юнит-тесты для логики викторины
+import os
 import pytest
-from dotenv import load_dotenv
-
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 from bot.utils.db import async_session_maker, create_all_tables, create_user_table
 from bot.models.user import User
 from sqlalchemy.future import select
 
 
-load_dotenv()
+# Устанавливаем TEST_ENV=true перед тестами
+os.environ["TEST_ENV"] = "true"
 
 
-@pytest.mark.asyncio
-async def test_create_user_in_memory_db():
-    """Тест на создание пользователя в in-memory базе данных."""
-
-    # Создаём таблицы в in-memory базе данных
+# @pytest.mark.asyncio(scope="function")
+@pytest.fixture(scope="function")
+async def clear_db():
+    """Фикстура для очистки базы данных перед каждым тестом."""
     async with async_session_maker() as session:
         async with session.begin():
-            await create_all_tables()
-            await create_user_table()
+            await session.execute(text("DROP TABLE IF EXISTS users CASCADE;"))
+
+    # Создание таблиц заново
+    await create_user_table()
+
+
+# @pytest.mark.usefixtures("clear_db")
+@pytest.mark.asyncio
+async def test_save_user_to_db(clear_db):
+    """Тест на создание пользователя в in-memory базе данных."""
 
     # Добавляем тестового пользователя
     async with async_session_maker() as session:
