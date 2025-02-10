@@ -1,7 +1,6 @@
 import os
 import pytest
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession
 from bot.utils.db import async_session_maker, create_all_tables, create_user_table
 from bot.models.user import User
 from sqlalchemy.future import select
@@ -11,7 +10,6 @@ from sqlalchemy.future import select
 os.environ["TEST_ENV"] = "true"
 
 
-# @pytest.mark.asyncio(scope="function")
 @pytest.fixture(scope="function")
 async def clear_db():
     """Фикстура для очистки базы данных перед каждым тестом."""
@@ -23,7 +21,6 @@ async def clear_db():
     await create_user_table()
 
 
-# @pytest.mark.usefixtures("clear_db")
 @pytest.mark.asyncio
 async def test_save_user_to_db(clear_db):
     """Тест на создание пользователя в in-memory базе данных."""
