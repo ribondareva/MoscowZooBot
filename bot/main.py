@@ -11,6 +11,7 @@ from bot.utils.db import (
     create_feedback_table,
     create_user_table,
     create_all_tables,
+    engine,
 )
 from bot.handlers.start_quiz import router as start_router
 from bot.handlers.end_quiz import router as end_router
@@ -19,6 +20,8 @@ from bot.handlers.contacts import router as contacts_router
 from bot.handlers.feedback import router as feedback_router
 from bot.handlers.share import router as share_router
 from bot.utils.config import config
+from sqlalchemy import inspect, text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 BOT_TOKEN = config.bot_token
@@ -59,19 +62,42 @@ async def parse_data():
     print("Данные успешно добавлены в базу!")
 
 
+async def table_exists(session: AsyncSession, table_name: str):
+    """Проверяет, существует ли таблица в базе данных."""
+    return await session.run_sync(
+        lambda sync_session: inspect(sync_session.bind).has_table(table_name)
+    )
+
+
 # Основная функция запуска
 async def main():
     await bot.set_my_commands(
         [BotCommand(command="contacts", description="Связаться с нами")]
     )
-    # await create_user_table()
-    # await create_feedback_table()
-    # await create_all_tables()
+    # Проверка и создание таблиц, если они не существуют
+    print("Проверка и создание таблиц...")
+    async with async_session_maker() as session:
+        if not await table_exists(session, "users"):
+            await create_user_table()
+
+        if not await table_exists(session, "feedbacks"):
+            await create_feedback_table()
+
+        if not await table_exists(session, "animals"):
+            await create_all_tables()
+        else:
+            # Проверяем, пуста ли таблица animals
+            result = await session.execute(text("SELECT COUNT(*) FROM animals"))
+            count = result.scalar()  # Получаем количество записей
+            if count == 0:
+                # Если таблица пуста, добавляем данные
+                print("Таблица animals пуста, добавляем данные...")
+                await parse_data()
+            else:
+                print("Таблица animals уже содержит данные.")
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
 
 if __name__ == "__main__":
-    # Раскомментируйте, чтобы запустить парсинг и добавление данных в базу
-    # parse_data()
     asyncio.run(main())
