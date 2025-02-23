@@ -11,7 +11,6 @@ from bot.utils.db import (
     create_feedback_table,
     create_user_table,
     create_all_tables,
-    engine,
 )
 from bot.handlers.start_quiz import router as start_router
 from bot.handlers.end_quiz import router as end_router
